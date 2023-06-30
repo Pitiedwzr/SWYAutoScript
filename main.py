@@ -1,6 +1,7 @@
 import os
 import cv2
 import time
+import json
 import numpy as np
 
 
@@ -35,7 +36,7 @@ def positionClick(template_path, click_positions, retry_limit=3):
             haveFound = True
             for position in click_positions:
                 click_position(position[0], position[1])
-                time.sleep(1)
+                time.sleep(0.5)
         else:
             retry_count += 1
 
@@ -65,7 +66,7 @@ def templateClick(template_path, retry_limit=3):
                 center_x = pt[0] + w // 2
                 center_y = pt[1] + h // 2
                 click_position(center_x, center_y)
-                time.sleep(1)
+                time.sleep(0.5)
         else:
             capture_screenshot()
             retry_count += 1
@@ -75,16 +76,17 @@ def templateClick(template_path, retry_limit=3):
 
 # 自动战斗技能点击坐标生成
 def generate_click_positions(skill_numbers):
-    #positions
-    #Char1: 630, 1250
-    #Char2: 1270, 1250
-    #Char3: 1510, 1250
-    #Char4: 1950, 1250
-    #S1: 830, 1050
-    #S2: 1330, 1050
-    #S3: 1830, 1050
-    char_positions = [(630, 1250), (1270, 1250), (1510, 1250), (1950, 1250)]
+    # Positions
+    # Char1: 630, 1250
+    # Char2: 1070, 1250
+    # Char3: 1510, 1250
+    # Char4: 1950, 1250
+    # S1: 830, 1050
+    # S2: 1330, 1050
+    # S3: 1830, 1050
+    char_positions = [(630, 1250), (1070, 1250), (1510, 1250), (1950, 1250)]
     skill_positions = [(830, 1050), (1330, 1050), (1830, 1050)]
+    attack_position = (2350, 1280)
     
     click_positions = []
     num_chars = len(char_positions)
@@ -95,6 +97,9 @@ def generate_click_positions(skill_numbers):
         skill_index = (skill_number - 1) % num_skills
         click_positions.append((char_positions[char_index][0], char_positions[char_index][1]))
         click_positions.append((skill_positions[skill_index][0], skill_positions[skill_index][1]))
+        
+        if char_index == num_chars - 1:
+            click_positions.append(attack_position)
     
     return click_positions
 
@@ -137,9 +142,14 @@ def autoExplore():
 
 def autoFight():
     template_path = "template/AutoFight/attack.png"
-    skill_number_sequences = [[2, 1, 1, 3], [1, 1, 1, 2]]
-
+    #skill_number_sequences = [[2, 1, 2, 1], [3, 3, 3, 3], [3, 3, 2, 1], [2, 1, 3, 1]]
+    #skill_number_sequences = [[2, 1, 2, 1], [3, 3, 3, 3], [3, 3, 2, 1], [2, 1, 3, 1]]
+    # 读取 JSON 文件
+    with open('skill_number_sequences.json', 'r') as f:
+      skill_number_sequences = json.load(f)
     for skill_numbers in skill_number_sequences:
-        click_positions = generate_click_positions(skill_numbers)
-        positionClick(template_path, click_positions, retry_limit=3)
-        templateClick(template_path, retry_limit=3)
+      click_positions = generate_click_positions(skill_numbers)
+      positionClick(template_path, click_positions, retry_limit=50)
+      time.sleep(10)
+
+autoFight()
