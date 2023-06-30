@@ -50,29 +50,28 @@ def templateClick(template_path, retry_limit=3):
     haveFound = False
 
     while retry_count < retry_limit and not haveFound:
-        capture_screenshot()
-        img_rgb = cv2.imread('screenshot.png')
-        img_gray = cv2.cvtColor(img_rgb, cv2.COLOR_BGR2GRAY)
+       capture_screenshot()  # 在循环开始前获取最新的屏幕截图
+       img_rgb = cv2.imread('screenshot.png')
+       img_gray = cv2.cvtColor(img_rgb, cv2.COLOR_BGR2GRAY)
 
-        template = cv2.imread(template_path, 0)
-        w, h = template.shape[::-1]
-        res = cv2.matchTemplate(img_gray, template, cv2.TM_CCOEFF_NORMED)
-        threshold = 0.8
-        loc = np.where(res >= threshold)
-        if len(loc[0]) > 0:
-            haveFound = True
-            for pt in zip(*loc[::-1]):
+       template = cv2.imread(template_path, 0)
+       w, h = template.shape[::-1]
+       res = cv2.matchTemplate(img_gray, template, cv2.TM_CCOEFF_NORMED)
+       threshold = 0.8
+       loc = np.where(res >= threshold)
+       if len(loc[0]) > 0:
+          haveFound = True
+          for pt in zip(*loc[::-1]):
                 # 计算模板中心位置
-                center_x = pt[0] + w // 2
-                center_y = pt[1] + h // 2
-                click_position(center_x, center_y)
-                time.sleep(0.5)
-        else:
-            capture_screenshot()
-            retry_count += 1
+              center_x = pt[0] + w // 2
+              center_y = pt[1] + h // 2
+              click_position(center_x, center_y)
+              time.sleep(0.5)  # 在点击后进行延时
+       else:
+          retry_count += 1
 
     if not haveFound:
-        print("Template not found. Stopping execution.")
+       print("Template not found. Stopping execution.")
 
 # 自动战斗技能点击坐标生成
 def generate_click_positions(skill_numbers):
@@ -137,8 +136,11 @@ def autoExplore():
         "template/AutoExplore/clickGetTianGongStone.png"
     ]
 
-    for template in templates:
-      templateClick(template, retry_limit=3)
+    
+    templateClick("template/AutoExplore/ExploreNotion.png", retry_limit=3)
+    time.sleep(1)  # 添加适当的延迟时间以等待新模板的出现
+    templateClick("template/AutoExplore/ExploreNotion2.png", retry_limit=3)
+    time.sleep(1)
 
 def autoFight():
     template_path = "template/AutoFight/attack.png"
@@ -149,7 +151,8 @@ def autoFight():
       skill_number_sequences = json.load(f)
     for skill_numbers in skill_number_sequences:
       click_positions = generate_click_positions(skill_numbers)
-      positionClick(template_path, click_positions, retry_limit=50)
+      positionClick(template_path, click_positions, retry_limit=100)
       time.sleep(10)
 
-autoFight()
+#autoFight()
+autoExplore()
