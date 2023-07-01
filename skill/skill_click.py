@@ -1,9 +1,10 @@
 import json
+
 skill_click = []
 round_click = []
 round_count = 1
 char_count = 1
-    
+
 while True:
     print(f"Round: {round_count} | Character: {char_count}")
     user_input = input("请输入额外点击点的 x 坐标和 y 坐标（以空格分隔），或输入 'END' 结束输入：")
@@ -27,6 +28,9 @@ while True:
         char_count = 1
         round_count += 1
     
+# 转换为字符串形式的元组
+skill_click_str = [[str(pos) for pos in round_click] for round_click in skill_click]
+
 # 保存到 JSON 文件
 with open('skill_click.json', 'w') as f:
-    json.dump(skill_click, f)
+    json.dump(skill_click_str, f)
