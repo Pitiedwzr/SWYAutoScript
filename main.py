@@ -44,7 +44,7 @@ def positionClick(template_path, click_positions, retry_limit=3):
         print("Template not found. Stopping execution.")
 
 
-# 识别模板并点击模板中心位置
+# 识别模板并点击模板中心位置（循环时会出现问题，暂时弃用）
 def templateClick(template_path, retry_limit=3):
     retry_count = 0
     haveFound = False
@@ -135,17 +135,20 @@ def autoExplore():
         "template/AutoExplore/GetReward.png",
         "template/AutoExplore/clickGetTianGongStone.png"
     ]
-
+    click_positions = [
+      (10, 550),
+      (440, 650),
+      (2300, 1300),
+      (1720, 1250),
+      (170, 350)
+    ]
+    for template in templates, click_position in click_positions:
+       positionClick(template, click_positions, retry_limit=3)
     
-    templateClick("template/AutoExplore/ExploreNotion.png", retry_limit=3)
-    time.sleep(1)  # 添加适当的延迟时间以等待新模板的出现
-    templateClick("template/AutoExplore/ExploreNotion2.png", retry_limit=3)
-    time.sleep(1)
+    
 
 def autoFight():
     template_path = "template/AutoFight/attack.png"
-    #skill_number_sequences = [[2, 1, 2, 1], [3, 3, 3, 3], [3, 3, 2, 1], [2, 1, 3, 1]]
-    #skill_number_sequences = [[2, 1, 2, 1], [3, 3, 3, 3], [3, 3, 2, 1], [2, 1, 3, 1]]
     # 读取 JSON 文件
     with open('skill_number_sequences.json', 'r') as f:
       skill_number_sequences = json.load(f)
@@ -153,6 +156,3 @@ def autoFight():
       click_positions = generate_click_positions(skill_numbers)
       positionClick(template_path, click_positions, retry_limit=100)
       time.sleep(10)
-
-#autoFight()
-autoExplore()
