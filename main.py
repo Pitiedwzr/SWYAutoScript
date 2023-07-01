@@ -11,8 +11,8 @@ import subprocess
 os.system(f"adb kill-server")
 os.system(f"adb start-server")
 os.system(f"adb devices")
-_DEVICE_ID = "emulator-5554"
-device = MNTDevice(_DEVICE_ID)
+#_DEVICE_ID = "emulator-5554"
+#device = MNTDevice(_DEVICE_ID)
 
 # 连接Minicap
 process = subprocess.Popen("adb shell LD_LIBRARY_PATH=/data/local/tmp /data/local/tmp/minicap -P 2560x1440@2560x1440/0", shell=True)
@@ -28,13 +28,15 @@ os.system(f"adb forward tcp:1717 localabstract:minicap")
 # 点击指定位置
 def click_position(x, y):
     # Minitouch
-    device.tap([(x, y)])
-    device.stop()
+    #device.tap([(x, y)])
+    #device.stop()
     # Adb
-    #os.system(f"adb shell input tap {x} {y}")
+    os.system(f"adb shell input tap {x} {y}")
 
-click_position(10, 550)
-capture_screen()
+# Debug
+#click_position(10, 550)
+#capture_screen()
+
 # 识别模板并点击指定位置
 def positionClick(template_path, click_positions, retry_limit=3):
     retry_count = 0
@@ -60,7 +62,6 @@ def positionClick(template_path, click_positions, retry_limit=3):
 
     if not haveFound:
         print("Template not found. Stopping execution.")
-
 
 # 识别模板并点击模板中心位置（循环时会出现问题，暂时弃用）
 def templateClick(template_path, retry_limit=3):
@@ -150,26 +151,24 @@ def autoExplore():
         "template/AutoExplore/ExploreNotion2.png",
         "template/AutoExplore/ClickFinishExplore.png",
         "template/AutoExplore/GetReward.png",
+        "template/AutoExplore/startExplore.png",
         "template/AutoExplore/SwitchToFinishedExplore.png",
         "template/AutoExplore/ClickFinishExplore.png",
         "template/AutoExplore/GetReward.png",
+        "template/AutoExplore/startExplore.png",
         "template/AutoExplore/SwitchToFinishedExplore.png",
         "template/AutoExplore/ClickFinishExplore.png",
         "template/AutoExplore/GetReward.png",
+        "template/AutoExplore/startExplore.png",
         "template/AutoExplore/SwitchToFinishedExplore.png",
         "template/AutoExplore/ClickFinishExplore.png",
         "template/AutoExplore/GetReward.png",
+        "template/AutoExplore/startExplore.png",
         "template/AutoExplore/clickGetTianGongStone.png"
     ]
-    click_positions = [
-      (10, 550),
-      (440, 650),
-      (2300, 1300),
-      (1720, 1250),
-      (170, 350)
-    ]
-    for template in templates, click_position in click_positions:
-       positionClick(template, click_positions, retry_limit=3)
+    click_positions = [[(10, 550), (440, 650), (2300, 1300), (1720, 1250), (2300, 1300), (170, 350), (2300, 1300), (1720, 1250), (2300, 1300), (170, 350), (2300, 1300), (1720, 1250), (2300, 1300), (170, 350), (2300, 1300), (1720, 1250), (2300, 1300), (750, 520)]]
+    for template_path, click_position in zip(templates, click_positions):
+        positionClick(template_path, click_position, retry_limit=3)
     
     
 
