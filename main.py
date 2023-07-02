@@ -64,7 +64,7 @@ def positionClick(template_path, click_positions, retry_limit=3, time_wait=0.3):
             haveFound = True
             for position in click_positions:
                 click_position(position[0], position[1])
-                time.sleep({time_wait})
+                time.sleep(time_wait)
         else:
             retry_count += 1
 
@@ -202,17 +202,12 @@ def autoFight():
     s.close()
 
 def autoKeChao():
-    click_positions = [
-            (340, 245), (525, 240), (707, 235), (335, 620), (505, 615), (660, 625), (450, 905), (670, 895), (885, 910),
-            (1230, 890), (1320, 745), (1395, 700), (1235, 815), (1310, 860), (1910, 630), (2080, 625), (2250, 635),
-            (1685, 920), (1900, 895), (2115, 900)
-        ]  # 点击位置循环列表
-    
     positionClick("template/AutoKeChao/startKeChao.jpg", [(1055, 1170)], retry_limit=3, time_wait=0.2)
 
     haveFound = False
     KeChaoEnd = False
     start_time = time.time()
+
     while not haveFound:
         capture_screen()
         img_rgb = cv2.imread('screenshot.jpg')
@@ -225,10 +220,12 @@ def autoKeChao():
         if len(loc[0]) > 0:
             haveFound = True
             while not KeChaoEnd:
-              for position in click_positions:
-                click_position(position[0], position[1])
-                capture_screen()
+              global s  # 声明使用全局变量s
+              # 发送触摸事件命令
+              command = f'd 0 340 245 50\nc\nu 0\nc\nw 70\nc\nd 0 525 240 50\nc\nu 0\nc\nw 70\nc\nd 0 707 235 50\nc\nu 0\nc\nw 70\nc\nd 0 335 620 50\nc\nu 0\nc\nw 70\nc\nd 0 505 615 50\nc\nu 0\nc\nw 70\nc\nd 0 660 625 50\nc\nu 0\nc\nw 70\nc\nd 0 450 905 50\nc\nu 0\nc\nw 70\nc\nd 0 670 895 50\nc\nu 0\nc\nw 70\nc\nd 0 885 910 50\nc\nu 0\nc\nw 70\nc\nd 0 1230 890 50\nc\nu 0\nc\nw 70\nc\nd 0 1320 745 50\nc\nu 0\nc\nw 70\nc\nd 0 1395 700 50\nc\nu 0\nc\nw 70\nc\nd 0 1235 815 50\nc\nu 0\nc\nw 70\nc\nd 0 1310 860 50\nc\nu 0\nc\nw 70\nc\nd 0 1910 630 50\nc\nu 0\nc\nw 70\nc\nd 0 2080 625 50\nc\nu 0\nc\nw 70\nc\nd 0 2250 635 50\nc\nu 0\nc\nw 70\nc\nd 0 1685 920 50\nc\nu 0\nc\nw 70\nc\nd 0 1900 895 50\nc\nu 0\nc\nw 70\nc\nd 0 2115 900 50\nc\nu 0\nc\nw 70\nc\nd 0 1870 245 50\nc\nu 0\nc\nw 70\nc\nd 0 2050 265 50\nc\nu 0\nc\nw 70\nc\nd 0 2225 255 50\nc\nu 0\nc\nw 70\nc\nd 0 1380 860 50\nc\nu 0\nc\nw 70\nc\nd 0 1420 900 50\nc\nu 0\nc\nw 70\nc\nd 0 1050 750 50\nc\nu 0\nc\nw 70\nc\n'  # 模拟按下和释放触摸事件命令格式：d 0 <x> <y> <pressure>\nu 0\nc\n
+              s.sendall(command.encode())
               if time.time() - start_time >= 50:
+                capture_screen()
                 img_rgb = cv2.imread('screenshot.jpg')
                 img_gray = cv2.cvtColor(img_rgb, cv2.COLOR_BGR2GRAY)
 
