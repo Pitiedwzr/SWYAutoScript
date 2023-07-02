@@ -8,53 +8,41 @@ import numpy as np
 from minicap import capture_screen
 import subprocess
 
-# 停止并启动ADB服务器
+# 重启ADB服务器
 subprocess.run(['adb', 'kill-server'])
 subprocess.run(['adb', 'start-server'])
 
 # 获取ADB设备列表
 subprocess.run(['adb', 'devices'])
 
-# 连接Minicap
+# 启动Minicap
 process = subprocess.Popen("adb shell LD_LIBRARY_PATH=/data/local/tmp /data/local/tmp/minicap -P 2560x1440@2560x1440/0", shell=True)
-time.sleep(8)
-process.terminate()
 time.sleep(3)
+process.terminate()
+time.sleep(1)
 process = subprocess.Popen("adb shell LD_LIBRARY_PATH=/data/local/tmp /data/local/tmp/minicap -P 2560x1440@2560x1440/0", shell=True)
 subprocess.run(['adb', 'forward', 'tcp:1717', 'localabstract:minicap'])
 
-# 连接minitouch
+# 启动minitouch
 subprocess.run(['adb', 'shell', '/data/local/tmp/minitouch'])
 subprocess.run(['adb', 'forward', 'tcp:1111', 'localabstract:minitouch'])
 
-# 创建socket对象
+# 创建全局变量存储Socket对象
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+# 连接Minitouch服务
+minitouch_host = 'localhost'  # Minitouch的主机地址
+minitouch_port = 1111  # Minitouch的端口号
+s.connect((minitouch_host, minitouch_port))
 
 # 点击指定位置
 def click_position(x, y):
-    # 创建socket对象
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    # 连接Minitouch服务
-    minitouch_host = 'localhost'  # Minitouch的主机地址
-    minitouch_port = 1111  # Minitouch的端口号
-    s.connect((minitouch_host, minitouch_port))
-
+    global s  # 声明使用全局变量s
     # 发送触摸事件命令
-    command = f'd 0 {x} {y} 50\nc\nu 0\nc\n'  # 模拟按下和释放触摸事件命令格式：d <device-id> <x> <y> <pressure>\nu <device-id>
+    command = f'd 0 {x} {y} 50\nc\nu 0\nc\n'
     s.sendall(command.encode())
 
-    # 接收响应
-    response = s.recv(1024)
-    print('Response:', response.decode())
-
-
-
-# Debug
-#click_position(10, 550)
-#capture_screen()
-
 # 识别模板并点击指定位置
-def positionClick(template_path, click_positions, retry_limit=3):
+def positionClick(template_path, click_positions, retry_limit=3, time_wait=0.3):
     retry_count = 0
     haveFound = False
 
@@ -72,7 +60,7 @@ def positionClick(template_path, click_positions, retry_limit=3):
             haveFound = True
             for position in click_positions:
                 click_position(position[0], position[1])
-                time.sleep(0.3)
+                time.sleep(time_wait)
         else:
             retry_count += 1
 
@@ -145,7 +133,7 @@ def generate_click_positions(skill_numbers, skill_click):
 
     return click_positions
 
-
+# 测试模板能否匹配
 def testTemplate():
   img_rgb = cv2.imread('screenshot.jpg')
   img_gray = cv2.cvtColor(img_rgb, cv2.COLOR_BGR2GRAY)
@@ -157,7 +145,6 @@ def testTemplate():
   loc = np.where( res >= threshold)
   for pt in zip(*loc[::-1]):
     cv2.rectangle(img_rgb, pt, (pt[0] + w, pt[1] + h), (0,255,255), 2)
-
   cv2.imshow('Detected',img_rgb)
   cv2.waitKey(0)
 
@@ -184,7 +171,9 @@ def autoExplore():
     ]
     click_positions = [[(10, 550), (440, 650), (2300, 1300), (1720, 1250), (2300, 1300), (170, 350), (2300, 1300), (1720, 1250), (2300, 1300), (170, 350), (2300, 1300), (1720, 1250), (2300, 1300), (170, 350), (2300, 1300), (1720, 1250), (2300, 1300), (750, 520)]]
     for template_path, click_position in zip(templates, click_positions):
-        positionClick(template_path, click_position, retry_limit=3)
+        positionClick(template_path, click_position, retry_limit=600, time_wait=0.9)
+    # 关闭socket连接
+    s.close()
     
     
 
@@ -202,9 +191,49 @@ def autoFight():
 
     for i, skill_numbers in enumerate(skill_number_sequences):
         click_positions = generate_click_positions(skill_numbers, skill_click[i])
-        positionClick(template_path, click_positions, retry_limit=100)
+        positionClick(template_path, click_positions, retry_limit=600, time_wait=0.5)
         time.sleep(5)
     # 关闭socket连接
     s.close()
+
+def autoKeChao():
+    positionClick("template/AutoKeChao/startKeChao.jpg", [(1055, 1170)], retry_limit=3, time_wait=0.2)
+
+    haveFound = False
+    KeChaoEnd = False
+    start_time = time.time()
+
+    while not haveFound:
+        capture_screen()
+        img_rgb = cv2.imread('screenshot.jpg')
+        img_gray = cv2.cvtColor(img_rgb, cv2.COLOR_BGR2GRAY)
+        template = cv2.imread("template/AutoKeChao/officialStart.jpg", 0)
+        w, h = template.shape[::-1]
+        res = cv2.matchTemplate(img_gray, template, cv2.TM_CCOEFF_NORMED)
+        threshold = 0.8
+        loc = np.where(res >= threshold)
+        if len(loc[0]) > 0:
+            haveFound = True
+            while not KeChaoEnd:
+              global s  # 声明使用全局变量s
+              # 实在懒得重写了，直接硬编码
+              command = f'd 0 340 245 50\nc\nu 0\nc\nw 70\nc\nd 0 525 240 50\nc\nu 0\nc\nw 70\nc\nd 0 707 235 50\nc\nu 0\nc\nw 70\nc\nd 0 335 620 50\nc\nu 0\nc\nw 70\nc\nd 0 505 615 50\nc\nu 0\nc\nw 70\nc\nd 0 660 625 50\nc\nu 0\nc\nw 70\nc\nd 0 450 905 50\nc\nu 0\nc\nw 70\nc\nd 0 670 895 50\nc\nu 0\nc\nw 70\nc\nd 0 885 910 50\nc\nu 0\nc\nw 70\nc\nd 0 1230 890 50\nc\nu 0\nc\nw 70\nc\nd 0 1320 745 50\nc\nu 0\nc\nw 70\nc\nd 0 1395 700 50\nc\nu 0\nc\nw 70\nc\nd 0 1235 815 50\nc\nu 0\nc\nw 70\nc\nd 0 1310 860 50\nc\nu 0\nc\nw 70\nc\nd 0 1910 630 50\nc\nu 0\nc\nw 70\nc\nd 0 2080 625 50\nc\nu 0\nc\nw 70\nc\nd 0 2250 635 50\nc\nu 0\nc\nw 70\nc\nd 0 1685 920 50\nc\nu 0\nc\nw 70\nc\nd 0 1900 895 50\nc\nu 0\nc\nw 70\nc\nd 0 2115 900 50\nc\nu 0\nc\nw 70\nc\nd 0 1870 245 50\nc\nu 0\nc\nw 70\nc\nd 0 2050 265 50\nc\nu 0\nc\nw 70\nc\nd 0 2225 255 50\nc\nu 0\nc\nw 70\nc\nd 0 1380 860 50\nc\nu 0\nc\nw 70\nc\nd 0 1420 900 50\nc\nu 0\nc\nw 70\nc\nd 0 1050 750 50\nc\nu 0\nc\nw 70\nc\nd 0 1180 620 50\nc\nu 0\nc\nw 70\nc\nd 0 1365 640 50\nc\nu 0\nc\nw 70\nc\n'
+              s.sendall(command.encode())
+              if time.time() - start_time >= 50:
+                # 识别是否结束（成功概率低，改成计时停止？）
+                capture_screen()
+                img_rgb = cv2.imread('screenshot.jpg')
+                img_gray = cv2.cvtColor(img_rgb, cv2.COLOR_BGR2GRAY)
+                template = cv2.imread("template/AutoKeChao/officialEnd.jpg", 0)
+                w, h = template.shape[::-1]
+                res = cv2.matchTemplate(img_gray, template, cv2.TM_CCOEFF_NORMED)
+                threshold = 0.8
+                loc = np.where(res >= threshold)
+                if len(loc[0]) > 0:
+                  KeChaoEnd = True
+
+    # 关闭socket连接
+    s.close()
+
 
 
