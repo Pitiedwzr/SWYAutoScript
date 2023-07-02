@@ -6,7 +6,7 @@ def execute_command(command):
     output, error = process.communicate()
     return output.decode().strip()
 
-def start_minicap():
+def setup_minicap():
     # 获取当前脚本的绝对路径
     script_dir = os.path.dirname(os.path.abspath(__file__))
     
@@ -32,4 +32,26 @@ def start_minicap():
     # 设置端口转发
     execute_command(f'{adb_path} forward tcp:1717 localabstract:minicap')
 
-start_minicap()
+def setup_minitouch():
+    # 获取当前脚本的绝对路径
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    
+    # 构建adb和minicap的相对路径
+    adb_path = os.path.join(script_dir, 'adb', 'adb.exe')
+    minitouch_path = os.path.join(script_dir, 'bin', 'minitouch', 'minitouch')
+    
+    # 推送minitouch到设备
+    execute_command(f'{adb_path} push {minitouch_path} /data/local/tmp/')
+    
+    # 设置minitouch文件的权限
+    execute_command(f'{adb_path} shell chmod 777 /data/local/tmp/minitouch')
+
+    # 启动minitouch
+    minicap_command = f'{adb_path} shell /data/local/tmp/minitouch'
+    execute_command(minicap_command)
+    
+    # 设置端口转发
+    execute_command(f'{adb_path} forward tcp:1111 localabstract:minitouch')
+
+setup_minicap()
+setup_minitouch()

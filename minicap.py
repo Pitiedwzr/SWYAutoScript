@@ -50,6 +50,7 @@ class Minicap:
 
     def on_image_transfered(self, data):
         file_name = 'screenshot.jpg'
+        time.sleep(0.02)
         with open(file_name, 'wb') as f:
             for b in data:
                 f.write((b).to_bytes(1, 'big'))

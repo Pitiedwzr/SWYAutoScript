@@ -3,35 +3,51 @@ import cv2
 import time
 import json
 import ast
+import socket
 import numpy as np
 from minicap import capture_screen
-from pyminitouch import safe_connection, safe_device, MNTDevice, CommandBuilder
 import subprocess
 
-os.system(f"adb kill-server")
-os.system(f"adb start-server")
-os.system(f"adb devices")
-#_DEVICE_ID = "emulator-5554"
-#device = MNTDevice(_DEVICE_ID)
+# 停止并启动ADB服务器
+subprocess.run(['adb', 'kill-server'])
+subprocess.run(['adb', 'start-server'])
+
+# 获取ADB设备列表
+subprocess.run(['adb', 'devices'])
 
 # 连接Minicap
 process = subprocess.Popen("adb shell LD_LIBRARY_PATH=/data/local/tmp /data/local/tmp/minicap -P 2560x1440@2560x1440/0", shell=True)
-# 等待一段时间，例如 5 秒
 time.sleep(8)
-# 停止当前命令执行
 process.terminate()
-# 等待一段时间后重新执行命令
-time.sleep(5)
+time.sleep(3)
 process = subprocess.Popen("adb shell LD_LIBRARY_PATH=/data/local/tmp /data/local/tmp/minicap -P 2560x1440@2560x1440/0", shell=True)
-os.system(f"adb forward tcp:1717 localabstract:minicap")
+subprocess.run(['adb', 'forward', 'tcp:1717', 'localabstract:minicap'])
+
+# 连接minitouch
+subprocess.run(['adb', 'shell', '/data/local/tmp/minitouch'])
+subprocess.run(['adb', 'forward', 'tcp:1111', 'localabstract:minitouch'])
+
+# 创建socket对象
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 # 点击指定位置
 def click_position(x, y):
-    # Minitouch
-    #device.tap([(x, y)])
-    #device.stop()
-    # Adb
-    os.system(f"adb shell input tap {x} {y}")
+    # 创建socket对象
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    # 连接Minitouch服务
+    minitouch_host = 'localhost'  # Minitouch的主机地址
+    minitouch_port = 1111  # Minitouch的端口号
+    s.connect((minitouch_host, minitouch_port))
+
+    # 发送触摸事件命令
+    command = f'd 0 {x} {y} 50\nc\nu 0\nc\n'  # 模拟按下和释放触摸事件命令格式：d <device-id> <x> <y> <pressure>\nu <device-id>
+    s.sendall(command.encode())
+
+    # 接收响应
+    response = s.recv(1024)
+    print('Response:', response.decode())
+
+
 
 # Debug
 #click_position(10, 550)
@@ -56,7 +72,7 @@ def positionClick(template_path, click_positions, retry_limit=3):
             haveFound = True
             for position in click_positions:
                 click_position(position[0], position[1])
-                time.sleep(0.25)
+                time.sleep(0.3)
         else:
             retry_count += 1
 
@@ -188,3 +204,7 @@ def autoFight():
         click_positions = generate_click_positions(skill_numbers, skill_click[i])
         positionClick(template_path, click_positions, retry_limit=100)
         time.sleep(5)
+    # 关闭socket连接
+    s.close()
+
+
