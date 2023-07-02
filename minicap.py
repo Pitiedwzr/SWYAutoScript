@@ -49,6 +49,7 @@ class Minicap:
         self.__socket.connect((self.host, self.port))
 
     def on_image_transfered(self, data):
+        #file_name = str(time.time()) + '.jpg'
         file_name = 'screenshot.jpg'
         time.sleep(0.02)
         with open(file_name, 'wb') as f:
@@ -103,3 +104,10 @@ def capture_screen():
     mc = Minicap('localhost', 1717, Banner())
     mc.connect()
     mc.consume()
+
+def screen_shotting():
+    screen_shot = 0
+    while screen_shot < 140:
+      capture_screen()
+      screen_shot += 1
+      time.sleep(0.5)
