@@ -51,7 +51,6 @@ class Minicap:
     def on_image_transfered(self, data):
         #file_name = str(time.time()) + '.jpg'
         file_name = 'screenshot.jpg'
-        time.sleep(0.02)
         with open(file_name, 'wb') as f:
             for b in data:
                 f.write((b).to_bytes(1, 'big'))
@@ -77,15 +76,15 @@ class Minicap:
                         [i for i in range(len(self.banner.keys()))], struct.unpack("<2b5ibB", chunk))
                     cursor = buf_len
                     readBannerBytes = bannerLength
-                    print(self.banner)
+                    #print(self.banner)
                 elif readFrameBytes < 4:
-                    print(struct.unpack('B', (chunk[cursor]).to_bytes(1, 'big')))
+                    #print(struct.unpack('B', (chunk[cursor]).to_bytes(1, 'big')))
                     # frameBodyLength += (struct.unpack('B', chunk[cursor])[0] << (readFrameBytes * 8)) >> 0
                     frameBodyLength += (chunk[cursor] << (readFrameBytes * 8)) >> 0
                     cursor += 1
                     readFrameBytes += 1
                 else:
-                    print("frame length:{0} buf_len:{1} cursor:{2}".format(frameBodyLength, buf_len, cursor))
+                    #print("frame length:{0} buf_len:{1} cursor:{2}".format(frameBodyLength, buf_len, cursor))
                     # pic end
                     if buf_len - cursor >= frameBodyLength:
                         data.extend(chunk[cursor:cursor + frameBodyLength])
@@ -107,7 +106,7 @@ def capture_screen():
 
 def screen_shotting():
     screen_shot = 0
-    while screen_shot < 140:
+    while screen_shot < 200:
       capture_screen()
       screen_shot += 1
       time.sleep(0.5)

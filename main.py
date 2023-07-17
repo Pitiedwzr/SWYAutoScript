@@ -12,14 +12,18 @@ import subprocess
 subprocess.run(['adb', 'kill-server'])
 subprocess.run(['adb', 'start-server'])
 
+# 如果使用不同模拟器，则可能需要提前连接adb
+# device_ip = [你的模拟器的ip]
+#subprocess.run(['adb', 'connect', device_ip])
+
 # 获取ADB设备列表
 subprocess.run(['adb', 'devices'])
 
 # 启动Minicap
 process = subprocess.Popen("adb shell LD_LIBRARY_PATH=/data/local/tmp /data/local/tmp/minicap -P 2560x1440@2560x1440/0", shell=True)
-time.sleep(3)
+time.sleep(2)
 process.terminate()
-time.sleep(1)
+time.sleep(0.5)
 process = subprocess.Popen("adb shell LD_LIBRARY_PATH=/data/local/tmp /data/local/tmp/minicap -P 2560x1440@2560x1440/0", shell=True)
 subprocess.run(['adb', 'forward', 'tcp:1717', 'localabstract:minicap'])
 
@@ -41,29 +45,30 @@ def click_position(x, y):
     command = f'd 0 {x} {y} 50\nc\nu 0\nc\n'
     s.sendall(command.encode())
 
+# 检查屏幕中是否存在指定模板，返回True或False
+def check_template(template_path, threshold=0.8):
+    capture_screen()
+    img_rgb = cv2.imread('screenshot.jpg')
+    img_gray = cv2.cvtColor(img_rgb, cv2.COLOR_BGR2GRAY)
+    template = cv2.imread(template_path, 0)
+    w, h = template.shape[::-1]
+    res = cv2.matchTemplate(img_gray, template, cv2.TM_CCOEFF_NORMED)
+    loc = np.where(res >= threshold)
+    return len(loc[0]) > 0
+
 # 识别模板并点击指定位置
-def positionClick(template_path, click_positions, retry_limit=3, time_wait=0.3):
+def positionClick(template_path, click_positions, retry_limit=60, time_wait=0.3):
     retry_count = 0
     haveFound = False
-
     while retry_count < retry_limit and not haveFound:
-        capture_screen()
-        img_rgb = cv2.imread('screenshot.jpg')
-        img_gray = cv2.cvtColor(img_rgb, cv2.COLOR_BGR2GRAY)
-
-        template = cv2.imread(template_path, 0)
-        w, h = template.shape[::-1]
-        res = cv2.matchTemplate(img_gray, template, cv2.TM_CCOEFF_NORMED)
-        threshold = 0.8
-        loc = np.where(res >= threshold)
-        if len(loc[0]) > 0:
+        time.sleep(time_wait)
+        if check_template(template_path, threshold=0.8):
             haveFound = True
             for position in click_positions:
                 click_position(position[0], position[1])
                 time.sleep(time_wait)
         else:
             retry_count += 1
-
     if not haveFound:
         print("Template not found. Stopping execution.")
 
@@ -76,13 +81,12 @@ def templateClick(template_path, retry_limit=3):
        capture_screen()  # 在循环开始前获取最新的屏幕截图
        img_rgb = cv2.imread('screenshot.jpg')
        img_gray = cv2.cvtColor(img_rgb, cv2.COLOR_BGR2GRAY)
-
        template = cv2.imread(template_path, 0)
        w, h = template.shape[::-1]
        res = cv2.matchTemplate(img_gray, template, cv2.TM_CCOEFF_NORMED)
        threshold = 0.8
        loc = np.where(res >= threshold)
-       if len(loc[0]) > 0:
+       if check_template(template_path, threshold=0.8):
           haveFound = True
           for pt in zip(*loc[::-1]):
                 # 计算模板中心位置
@@ -120,24 +124,18 @@ def generate_click_positions(skill_numbers, skill_click):
         skill_index = (skill_number - 1) % num_skills
         click_positions.append((char_positions[char_index][0], char_positions[char_index][1]))
         click_positions.append((skill_positions[skill_index][0], skill_positions[skill_index][1]))
-
         if isinstance(skill_click[char_index], tuple):
             skill_click[char_index] = [skill_click[char_index]]
-
         for pos in skill_click[char_index]:
             click_positions.append(pos)
-
-
         if char_index == num_chars - 1:
             click_positions.append(attack_position)
-
     return click_positions
 
 # 测试模板能否匹配
 def testTemplate():
   img_rgb = cv2.imread('screenshot.jpg')
   img_gray = cv2.cvtColor(img_rgb, cv2.COLOR_BGR2GRAY)
-
   template = cv2.imread('template/AutoExplore/ExploreNotion.png',0)
   w, h = template.shape[::-1]
   res = cv2.matchTemplate(img_gray,template,cv2.TM_CCOEFF_NORMED)
@@ -171,69 +169,43 @@ def autoExplore():
     ]
     click_positions = [[(10, 550), (440, 650), (2300, 1300), (1720, 1250), (2300, 1300), (170, 350), (2300, 1300), (1720, 1250), (2300, 1300), (170, 350), (2300, 1300), (1720, 1250), (2300, 1300), (170, 350), (2300, 1300), (1720, 1250), (2300, 1300), (750, 520)]]
     for template_path, click_position in zip(templates, click_positions):
-        positionClick(template_path, click_position, retry_limit=600, time_wait=0.9)
+        positionClick(template_path, click_position, retry_limit=600, time_wait=1)
     # 关闭socket连接
     s.close()
     
-    
-
 def autoFight():
     template_path = "template/AutoFight/attack.png"
     # 读取 JSON 文件
     with open('skill_number_sequences.json', 'r') as f:
         skill_number_sequences = json.load(f)
-
     with open('skill_click.json', 'r') as f:
         skill_click = json.load(f)
-        
         # 解析字符串为包含元组的列表
         skill_click = [[ast.literal_eval(item) for item in sublist] for sublist in skill_click]
-
     for i, skill_numbers in enumerate(skill_number_sequences):
         click_positions = generate_click_positions(skill_numbers, skill_click[i])
-        positionClick(template_path, click_positions, retry_limit=600, time_wait=0.5)
+        positionClick(template_path, click_positions, retry_limit=600, time_wait=0.3)
         time.sleep(5)
     # 关闭socket连接
     s.close()
 
 def autoKeChao():
     positionClick("template/AutoKeChao/startKeChao.jpg", [(1055, 1170)], retry_limit=3, time_wait=0.2)
-
     haveFound = False
     KeChaoEnd = False
     start_time = time.time()
-
     while not haveFound:
-        capture_screen()
-        img_rgb = cv2.imread('screenshot.jpg')
-        img_gray = cv2.cvtColor(img_rgb, cv2.COLOR_BGR2GRAY)
-        template = cv2.imread("template/AutoKeChao/officialStart.jpg", 0)
-        w, h = template.shape[::-1]
-        res = cv2.matchTemplate(img_gray, template, cv2.TM_CCOEFF_NORMED)
-        threshold = 0.8
-        loc = np.where(res >= threshold)
-        if len(loc[0]) > 0:
+        if check_template("template/AutoKeChao/officialStart.jpg", threshold=0.8):
             haveFound = True
             while not KeChaoEnd:
               global s  # 声明使用全局变量s
               # 实在懒得重写了，直接硬编码
-              command = f'd 0 340 245 50\nc\nu 0\nc\nw 70\nc\nd 0 525 240 50\nc\nu 0\nc\nw 70\nc\nd 0 707 235 50\nc\nu 0\nc\nw 70\nc\nd 0 335 620 50\nc\nu 0\nc\nw 70\nc\nd 0 505 615 50\nc\nu 0\nc\nw 70\nc\nd 0 660 625 50\nc\nu 0\nc\nw 70\nc\nd 0 450 905 50\nc\nu 0\nc\nw 70\nc\nd 0 670 895 50\nc\nu 0\nc\nw 70\nc\nd 0 885 910 50\nc\nu 0\nc\nw 70\nc\nd 0 1230 890 50\nc\nu 0\nc\nw 70\nc\nd 0 1320 745 50\nc\nu 0\nc\nw 70\nc\nd 0 1395 700 50\nc\nu 0\nc\nw 70\nc\nd 0 1235 815 50\nc\nu 0\nc\nw 70\nc\nd 0 1310 860 50\nc\nu 0\nc\nw 70\nc\nd 0 1910 630 50\nc\nu 0\nc\nw 70\nc\nd 0 2080 625 50\nc\nu 0\nc\nw 70\nc\nd 0 2250 635 50\nc\nu 0\nc\nw 70\nc\nd 0 1685 920 50\nc\nu 0\nc\nw 70\nc\nd 0 1900 895 50\nc\nu 0\nc\nw 70\nc\nd 0 2115 900 50\nc\nu 0\nc\nw 70\nc\nd 0 1870 245 50\nc\nu 0\nc\nw 70\nc\nd 0 2050 265 50\nc\nu 0\nc\nw 70\nc\nd 0 2225 255 50\nc\nu 0\nc\nw 70\nc\nd 0 1380 860 50\nc\nu 0\nc\nw 70\nc\nd 0 1420 900 50\nc\nu 0\nc\nw 70\nc\nd 0 1050 750 50\nc\nu 0\nc\nw 70\nc\nd 0 1180 620 50\nc\nu 0\nc\nw 70\nc\nd 0 1365 640 50\nc\nu 0\nc\nw 70\nc\n'
+              command = f'd 0 340 245 50\nc\nu 0\nc\nw 70\nc\nd 0 525 240 50\nc\nu 0\nc\nw 70\nc\nd 0 707 235 50\nc\nu 0\nc\nw 70\nc\nd 0 335 620 50\nc\nu 0\nc\nw 70\nc\nd 0 505 615 50\nc\nu 0\nc\nw 70\nc\nd 0 660 625 50\nc\nu 0\nc\nw 70\nc\nd 0 450 905 50\nc\nu 0\nc\nw 70\nc\nd 0 670 895 50\nc\nu 0\nc\nw 70\nc\nd 0 885 910 50\nc\nu 0\nc\nw 70\nc\nd 0 1230 890 50\nc\nu 0\nc\nw 70\nc\nd 0 1320 745 50\nc\nu 0\nc\nw 70\nc\nd 0 1395 700 50\nc\nu 0\nc\nw 70\nc\nd 0 1235 815 50\nc\nu 0\nc\nw 70\nc\nd 0 1310 860 50\nc\nu 0\nc\nw 70\nc\nd 0 1910 630 50\nc\nu 0\nc\nw 70\nc\nd 0 2080 625 50\nc\nu 0\nc\nw 70\nc\nd 0 2250 635 50\nc\nu 0\nc\nw 70\nc\nd 0 1685 920 50\nc\nu 0\nc\nw 70\nc\nd 0 1900 895 50\nc\nu 0\nc\nw 70\nc\nd 0 2115 900 50\nc\nu 0\nc\nw 70\nc\nd 0 1870 245 50\nc\nu 0\nc\nw 70\nc\nd 0 2050 265 50\nc\nu 0\nc\nw 70\nc\nd 0 2225 255 50\nc\nu 0\nc\nw 70\nc\nd 0 1380 860 50\nc\nu 0\nc\nw 70\nc\nd 0 1420 900 50\nc\nu 0\nc\nw 70\nc\nd 0 1050 750 50\nc\nu 0\nc\nw 70\nc\nd 0 1180 620 50\nc\nu 0\nc\nw 70\nc\nd 0 1365 640 50\nc\nu 0\nc\nw 70\nc\nd 0 1145 665 50\nc\nu 0\nc\nw 70\nc\n'
               s.sendall(command.encode())
               if time.time() - start_time >= 50:
                 # 识别是否结束（成功概率低，改成计时停止？）
                 capture_screen()
-                img_rgb = cv2.imread('screenshot.jpg')
-                img_gray = cv2.cvtColor(img_rgb, cv2.COLOR_BGR2GRAY)
-                template = cv2.imread("template/AutoKeChao/officialEnd.jpg", 0)
-                w, h = template.shape[::-1]
-                res = cv2.matchTemplate(img_gray, template, cv2.TM_CCOEFF_NORMED)
-                threshold = 0.8
-                loc = np.where(res >= threshold)
-                if len(loc[0]) > 0:
+                if check_template("template/AutoKeChao/officialEnd.jpg", threshold=0.8):
                   KeChaoEnd = True
-
     # 关闭socket连接
     s.close()
-
-
-
