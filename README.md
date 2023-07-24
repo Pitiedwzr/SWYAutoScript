@@ -1,6 +1,9 @@
 # SWYAutoScript
 ShiWuYuAutoScript（SAS）食物语自动脚本
 
+# 计划接入[MaaFramework](https://github.com/MaaAssistantArknights/MaaFramework)
+如果您有编程经验，欢迎提交pr来帮助本项目接入[MaaFramework](https://github.com/MaaAssistantArknights/MaaFramework)
+
 # Features
 - 自动战斗（拒绝手刷绀珠）:支持选择技能释放目标
 - 技能表生成
