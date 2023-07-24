@@ -6,3 +6,6 @@
 
 # Positions
 Boss：400, 450
+
+# 战绩
+52w
