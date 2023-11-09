@@ -1,5 +1,5 @@
 # MASWY
-MaaAssistantSWY（MASWY）由[MaaFramework](https://github.com/MaaAssistantArknights/MaaFramework)驱动的食物语助手（计划中）
+MaaAssistantSWY（MASWY）由[MaaFramework](https://github.com/MaaAssistantArknights/MaaFramework)驱动的食物语助手
 
 # To do
 - 接入MaaFramework

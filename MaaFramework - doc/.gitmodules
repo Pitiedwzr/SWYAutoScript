@@ -1,0 +1,9 @@
+[submodule "3rdparty/MaaDeps"]
+	path = 3rdparty/MaaDeps
+	url = https://github.com/MaaAssistantArknights/MaaDeps
+[submodule "3rdparty/MaaAgentBinary"]
+	path = 3rdparty/MaaAgentBinary
+	url = https://github.com/MaaAssistantArknights/MaaAgentBinary
+[submodule "test/TestingDataSet"]
+	path = test/TestingDataSet
+	url = https://github.com/MaaAssistantArknights/MaaFrameworkTesting.git
