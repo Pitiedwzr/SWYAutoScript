@@ -1,6 +1,9 @@
 # SWYAutoScript
 ShiWuYuAutoScript（SAS）食物语自动脚本
 
+# 项目暂停
+游戏快死了，暂时不打算继续这个项目，顺便继续观望MaaFramework那边的更新。之后陪伴版可能会重构，暂时先PA吧。
+
 # 计划接入[MaaFramework](https://github.com/MaaAssistantArknights/MaaFramework)
 如果您有编程经验，欢迎提交pr来帮助本项目接入[MaaFramework](https://github.com/MaaAssistantArknights/MaaFramework)
 
